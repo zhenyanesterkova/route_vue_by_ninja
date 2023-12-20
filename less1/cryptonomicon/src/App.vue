@@ -62,7 +62,7 @@
           <div
             v-for="t in tickers"
             :key="t.name"
-            @click="sel = t"
+            @click="select(t)"
             :class="{
               'border-4': sel === t
             }"
@@ -105,16 +105,10 @@
         </h3>
         <div class="flex items-end border-gray-600 border-b border-l h-64">
           <div
-            class="bg-purple-800 border w-10 h-24"
-          ></div>
-          <div
-            class="bg-purple-800 border w-10 h-32"
-          ></div>
-          <div
-            class="bg-purple-800 border w-10 h-48"
-          ></div>
-          <div
-            class="bg-purple-800 border w-10 h-16"
+            v-for:="(bar, idx) in normalizeGraph()"
+            :key="idx"
+            :style="{height: `${bar}%`}"
+            class="bg-purple-800 border w-10"
           ></div>
         </div>
         <button
@@ -157,7 +151,8 @@ export default {
       ticker: '',
       tickers: [],
       sel: null,
-      tickersDataHandlers: []
+      tickersDataHandlers: [],
+      graph: [],
     }
   },
   methods: {
@@ -174,6 +169,9 @@ export default {
           const f = await fetch(`https://min-api.cryptocompare.com/data/price?fsym=${currentTicker.name}&tsyms=USD&api_key=203707aa602cfb800af467e900a06adbbf4cbcf679d61b233cb6cc7fddf0df7a`);
           const data = await f.json();
           this.tickers.find(ticker => ticker.name === currentTicker.name).price = data.USD > 1 ? data.USD.toFixed(2) : data.USD.toPrecision(2);
+          if (this.sel?.name === currentTicker.name) {
+            this.graph.push(data.USD);
+          }
         }, 3000);
         this.tickersDataHandlers.push({
           tickerName: currentTicker.name,
@@ -195,6 +193,16 @@ export default {
       if (this.sel && this.sel.name === t.name) {
         this.sel = null;
       }
+    },
+    normalizeGraph(){
+      const minPrice = Math.min(...this.graph);
+      const maxPrice = Math.max(...this.graph);
+
+      return this.graph.map(price => 5 + ((price - minPrice)*95)/(maxPrice - minPrice))
+    },
+    select(ticker) {
+      this.sel = ticker;
+      this.graph = [];
     }
   }
 }
